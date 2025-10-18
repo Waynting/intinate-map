@@ -1,0 +1,145 @@
+// Prisma Schema for Intimate Spaces Taipei
+// Database: SQLite (local development)
+// Date: 2025-10-17
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// User Model - Authentication & Authorization
+// ============================================================================
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("user") // user | admin | moderator
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  places    Place[]
+  reviews   Review[]
+  reports   Report[]
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+// ============================================================================
+// Place Model - Hotels/Motels/Short-stay spaces
+// ============================================================================
+model Place {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // hotel | motel | short_stay
+  address   String?
+  latitude  Float
+  longitude Float
+
+  // Google Places Integration
+  googlePlaceId      String? @map("google_place_id")
+  googleRating       Float?  @map("google_rating")
+  googleRatingsTotal Int?    @map("google_ratings_total")
+  googlePriceLevel   Int?    @map("google_price_level") // 0-4
+
+  // Privacy & Amenities (JSON array)
+  // ["self_checkin", "soundproof", "garage", "cash_only", "kiosk", "hourly_rate"]
+  privacyTags String? @map("privacy_tags")
+
+  // Metadata
+  source    String  @default("user") // taipei-open-data | user | system
+  createdBy String? @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  creator   User?      @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  reviews   Review[]
+  reports   Report[]
+  favorites Favorite[]
+
+  // Indexes for performance
+  @@index([latitude, longitude], name: "idx_places_latlng")
+  @@index([type], name: "idx_places_type")
+  @@index([googleRating], name: "idx_places_rating")
+  @@index([googlePriceLevel], name: "idx_places_price")
+  @@map("places")
+}
+
+// ============================================================================
+// Review Model - User reviews (anonymous by default)
+// ============================================================================
+model Review {
+  id      String @id @default(uuid())
+  placeId String @map("place_id")
+  userId  String @map("user_id")
+
+  rating  Int    // 1-5
+  content String? // Optional text review
+
+  // Tags (JSON array): ["clean", "quiet", "safe", "friendly_staff", "value"]
+  tags        String?
+  isAnonymous Boolean @default(true) @map("is_anonymous")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  place Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([placeId], name: "idx_reviews_place")
+  @@index([userId], name: "idx_reviews_user")
+  @@map("reviews")
+}
+
+// ============================================================================
+// Report Model - User reports for data fixes or abuse
+// ============================================================================
+model Report {
+  id       String  @id @default(uuid())
+  placeId  String? @map("place_id")
+  reviewId String? @map("review_id")
+  userId   String? @map("user_id")
+
+  type String // data_fix | abuse | safety
+
+  // Payload (JSON): detailed report information
+  payload String
+
+  status    String   @default("open") // open | resolved | rejected
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  place Place? @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status], name: "idx_reports_status")
+  @@index([type], name: "idx_reports_type")
+  @@map("reports")
+}
+
+// ============================================================================
+// Favorite Model - User's favorite places
+// ============================================================================
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  placeId   String   @map("place_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  // Ensure a user can only favorite a place once
+  @@unique([userId, placeId])
+  @@index([userId], name: "idx_favorites_user")
+  @@index([placeId], name: "idx_favorites_place")
+  @@map("favorites")
+}
