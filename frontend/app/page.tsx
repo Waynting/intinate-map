@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Hotel, MapPin, Map, Star, Shield, Search } from "lucide-react";
+import { Hotel, MapPin, Map } from "lucide-react";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function LandingPage() {
           </h1>
           <p className="text-lg text-muted-foreground sm:text-xl max-w-2xl mx-auto">
             探索台北、新北地區的飯店、汽車旅館與民宿<br className="hidden sm:block" />
-            <span className="text-sm">整合 Google 評分、隱私特色標籤，讓您快速找到理想住宿</span>
+            <span className="text-sm">無需登入，完全開放的地圖查詢服務</span>
           </p>
         </div>
 
@@ -65,34 +65,14 @@ export default function LandingPage() {
         </div>
 
         {/* Features */}
-        <div className="mt-12 grid w-full max-w-4xl gap-6 md:grid-cols-3">
+        <div className="mt-12 grid w-full max-w-4xl gap-6 md:grid-cols-1">
           <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-6 shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Search className="h-6 w-6 text-primary" />
+              <MapPin className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-semibold">智能搜尋</h3>
+            <h3 className="font-semibold">互動式地圖</h3>
             <p className="text-sm text-muted-foreground">
-              依類型、評分、價位篩選，快速定位理想住宿
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Star className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="font-semibold">Google 評分</h3>
-            <p className="text-sm text-muted-foreground">
-              整合 Google 商家評價與評分，參考真實用戶體驗
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-6 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="font-semibold">隱私特色</h3>
-            <p className="text-sm text-muted-foreground">
-              標示自助入住、隔音良好等隱私相關特色
+              使用 Leaflet + OpenStreetMap 免費地圖服務，瀏覽超過 1,100 個場所
             </p>
           </div>
         </div>
@@ -103,7 +83,7 @@ export default function LandingPage() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>• 涵蓋台北市與新北市超過 1,100 個住宿場所</li>
             <li>• 提供飯店、汽車旅館、民宿三大類型篩選</li>
-            <li>• 整合 Google Maps 評分與評論數據</li>
+            <li>• 使用免費的 OpenStreetMap 地圖圖資</li>
             <li>• 支援地圖標記聚合（Clustering），大量資料一目瞭然</li>
             <li>• 無需登入，所有資訊完全開放查詢</li>
           </ul>
@@ -113,7 +93,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="mt-auto w-full border-t py-6">
         <div className="container text-center text-sm text-muted-foreground">
-          使用 OpenStreetMap 圖資 | 資料來源：Google Maps API
+          使用 OpenStreetMap 圖資 | 純展示型地圖應用
         </div>
       </footer>
     </div>
