@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { PlaceType, PrivacyTag, PlaceFilters } from '../types';
-import { createPlace, listPlaces, getPlace, updatePlace, deletePlace, getNTUAreaPlaces } from './service';
-import { authenticateToken, type AuthRequest } from '../auth/middleware';
+import { PlaceType, PlaceFilters } from '../types';
+import { listPlaces, getPlace, getNTUAreaPlaces } from './service';
 
 const router = Router();
 
@@ -11,34 +10,10 @@ const router = Router();
 // ============================================================================
 
 const PlaceTypeSchema = z.enum(['hotel', 'motel', 'short_stay']);
-const PrivacyTagSchema = z.enum(['self_checkin', 'soundproof', 'garage', 'cash_only', 'kiosk', 'hourly_rate']);
-
-const CreatePlaceSchema = z.object({
-  name: z.string().min(1).max(200),
-  type: PlaceTypeSchema,
-  address: z.string().min(1).max(500).optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  privacyTags: z.array(PrivacyTagSchema).optional(),
-}).refine(
-  (data) => data.address || (data.latitude && data.longitude),
-  {
-    message: 'Either address or coordinates (latitude + longitude) must be provided',
-  }
-);
-
-const UpdatePlaceSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  type: PlaceTypeSchema.optional(),
-  address: z.string().min(1).max(500).optional(),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  privacyTags: z.array(PrivacyTagSchema).optional(),
-});
 
 const PlaceFiltersSchema = z.object({
   type: PlaceTypeSchema.optional(),
-  city: z.string().optional(), // Filter by city name
+  city: z.string().optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
   radius: z.coerce.number().positive().optional(),
@@ -49,7 +24,7 @@ const PlaceFiltersSchema = z.object({
   boundsNE_lng: z.coerce.number().optional(),
   boundsSW_lat: z.coerce.number().optional(),
   boundsSW_lng: z.coerce.number().optional(),
-  limit: z.coerce.number().positive().max(20000).optional(), // Allow up to 20000 records
+  limit: z.coerce.number().positive().max(20000).optional(),
   offset: z.coerce.number().min(0).optional(),
 });
 
@@ -62,7 +37,6 @@ router.get('/stats/cities', async (req: Request, res: Response) => {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
-    // Get all places with addresses
     const places = await prisma.place.findMany({
       where: {
         address: {
@@ -74,7 +48,6 @@ router.get('/stats/cities', async (req: Request, res: Response) => {
       },
     });
 
-    // Extract city from address (first 3 characters)
     const cityCounts: Record<string, number> = {};
     places.forEach((place) => {
       if (place.address) {
@@ -83,7 +56,6 @@ router.get('/stats/cities', async (req: Request, res: Response) => {
       }
     });
 
-    // Convert to array and sort by count
     const cities = Object.entries(cityCounts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
@@ -106,7 +78,6 @@ router.get('/stats/cities', async (req: Request, res: Response) => {
 
 router.get('/ntu', async (req: Request, res: Response) => {
   try {
-    // Validate query parameters (same as regular places listing)
     const validation = PlaceFiltersSchema.safeParse(req.query);
     if (!validation.success) {
       return res.status(400).json({
@@ -117,7 +88,6 @@ router.get('/ntu', async (req: Request, res: Response) => {
 
     const { limit = 1000, offset = 0, ...filters } = validation.data;
 
-    // Build filters object
     const placeFilters: PlaceFilters = {};
 
     if (filters.type) placeFilters.type = filters.type as PlaceType;
@@ -125,7 +95,6 @@ router.get('/ntu', async (req: Request, res: Response) => {
     if (filters.maxPriceLevel !== undefined) placeFilters.maxPriceLevel = filters.maxPriceLevel;
     if (filters.q) placeFilters.q = filters.q;
 
-    // Get NTU area places
     const places = await getNTUAreaPlaces(placeFilters, limit, offset);
 
     res.json({
@@ -150,7 +119,6 @@ router.get('/ntu', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Validate query parameters
     const validation = PlaceFiltersSchema.safeParse(req.query);
     if (!validation.success) {
       return res.status(400).json({
@@ -161,7 +129,6 @@ router.get('/', async (req: Request, res: Response) => {
 
     const params = validation.data;
 
-    // Build filters object
     const filters: PlaceFilters = {};
     if (params.type) filters.type = params.type;
     if (params.city) filters.city = params.city;
@@ -172,16 +139,14 @@ router.get('/', async (req: Request, res: Response) => {
     if (params.maxPriceLevel !== undefined) filters.maxPriceLevel = params.maxPriceLevel;
     if (params.q) filters.q = params.q;
 
-    // Bounds filtering (map viewport)
     if (params.boundsNE_lat && params.boundsNE_lng && params.boundsSW_lat && params.boundsSW_lng) {
       filters.boundsNE = { lat: params.boundsNE_lat, lng: params.boundsNE_lng };
       filters.boundsSW = { lat: params.boundsSW_lat, lng: params.boundsSW_lng };
     }
 
-    const limit = params.limit || 5000; // Default to 5000, can be increased up to 20000
+    const limit = params.limit || 5000;
     const offset = params.offset || 0;
 
-    // Fetch places
     const places = await listPlaces(filters, limit, offset);
 
     res.json({
@@ -218,162 +183,6 @@ router.get('/:id', async (req: Request, res: Response) => {
     console.error('Get place error:', error);
     res.status(500).json({
       error: 'Failed to fetch place',
-      message: error.message,
-    });
-  }
-});
-
-// ============================================================================
-// POST /api/places - Create new place (auth required)
-// ============================================================================
-
-router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
-  try {
-    // Validate request body
-    const validation = CreatePlaceSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        error: 'Invalid request body',
-        details: validation.error.errors,
-      });
-    }
-
-    const data = validation.data;
-
-    // Create place
-    const place = await createPlace({
-      name: data.name,
-      type: data.type,
-      address: data.address,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      privacyTags: data.privacyTags,
-      userId: req.user!.userId, // From auth middleware
-    });
-
-    res.status(201).json(place);
-  } catch (error: any) {
-    console.error('Create place error:', error);
-
-    // Content moderation errors
-    if (error.message.includes('Content moderation failed')) {
-      return res.status(400).json({
-        error: 'Content not allowed',
-        message: error.message,
-      });
-    }
-
-    // Geocoding errors
-    if (error.message.includes('Failed to geocode')) {
-      return res.status(400).json({
-        error: 'Invalid address',
-        message: error.message,
-      });
-    }
-
-    res.status(500).json({
-      error: 'Failed to create place',
-      message: error.message,
-    });
-  }
-});
-
-// ============================================================================
-// PATCH /api/places/:id - Update place (auth required, owner or admin)
-// ============================================================================
-
-router.patch('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    // Validate request body
-    const validation = UpdatePlaceSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        error: 'Invalid request body',
-        details: validation.error.errors,
-      });
-    }
-
-    const updates = validation.data;
-
-    // Check if user is admin/moderator
-    const isAdmin = req.user!.role === 'admin' || req.user!.role === 'moderator';
-
-    // Update place
-    const place = await updatePlace(id, updates, req.user!.userId, isAdmin);
-
-    res.json(place);
-  } catch (error: any) {
-    console.error('Update place error:', error);
-
-    // Authorization errors
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: error.message,
-      });
-    }
-
-    // Not found errors
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        error: 'Place not found',
-        message: error.message,
-      });
-    }
-
-    // Content moderation errors
-    if (error.message.includes('Content moderation failed')) {
-      return res.status(400).json({
-        error: 'Content not allowed',
-        message: error.message,
-      });
-    }
-
-    res.status(500).json({
-      error: 'Failed to update place',
-      message: error.message,
-    });
-  }
-});
-
-// ============================================================================
-// DELETE /api/places/:id - Delete place (auth required, owner or admin)
-// ============================================================================
-
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    // Check if user is admin/moderator
-    const isAdmin = req.user!.role === 'admin' || req.user!.role === 'moderator';
-
-    // Delete place
-    await deletePlace(id, req.user!.userId, isAdmin);
-
-    res.status(204).send();
-  } catch (error: any) {
-    console.error('Delete place error:', error);
-
-    // Authorization errors
-    if (error.message.includes('Unauthorized')) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: error.message,
-      });
-    }
-
-    // Not found errors
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        error: 'Place not found',
-        message: error.message,
-      });
-    }
-
-    res.status(500).json({
-      error: 'Failed to delete place',
       message: error.message,
     });
   }

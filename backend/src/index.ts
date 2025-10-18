@@ -1,11 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './auth/routes';
 import placesRoutes from './places/routes';
-import reviewsRoutes from './reviews/routes';
-import reportsRoutes from './reports/routes';
-import favoritesRoutes from './routes/favorites';
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +9,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration (Required: port 5173 for assignment specs)
+// CORS configuration
 const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173', 'http://127.0.0.1:5173'];
 app.use(
   cors({
@@ -44,11 +40,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-app.use('/auth', authRoutes);
 app.use('/api/places', placesRoutes);
-app.use('/api/reviews', reviewsRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/favorites', favoritesRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -67,43 +59,19 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Start server
 app.listen(PORT, () => {
   console.log(`
-🚀 Intimate Spaces Taipei API Server
+🚀 私密空間地圖 API Server (Read-Only)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Environment: ${process.env.NODE_ENV || 'development'}
 Port: ${PORT}
 CORS Origins: ${corsOrigins.join(', ')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Auth Endpoints:
-  POST /auth/register
-  POST /auth/login
-  POST /auth/logout
-
-Places Endpoints:
-  GET    /api/places (filters: type, minRating, maxPriceLevel, q, bounds)
-  GET    /api/places/:id
-  POST   /api/places (auth required)
-  PATCH  /api/places/:id (auth required, owner/admin)
-  DELETE /api/places/:id (auth required, owner/admin)
-
-Reviews Endpoints:
-  GET    /api/reviews/place/:placeId
-  GET    /api/reviews/user/:userId
-  GET    /api/reviews/:id
-  POST   /api/reviews (auth required)
-  PATCH  /api/reviews/:id (auth required, owner)
-  DELETE /api/reviews/:id (auth required, owner/admin)
-
-Reports Endpoints:
-  GET    /api/reports (admin/moderator only)
-  GET    /api/reports/stats (admin/moderator only)
-  GET    /api/reports/:id (admin/moderator only)
-  POST   /api/reports (optional auth)
-  PATCH  /api/reports/:id (admin/moderator only)
-  DELETE /api/reports/:id (admin only)
-
-System:
-  GET /health
+Available Endpoints:
+  GET /health                      - Health check
+  GET /api/places                  - List all places (supports filters)
+  GET /api/places/stats/cities     - City statistics
+  GET /api/places/ntu              - NTU area places
+  GET /api/places/:id              - Get place details
 
 Ready to accept requests! 🎉
   `);

@@ -75,3 +75,22 @@ backend/prisma/migrations/
 tmp/
 temp/
 *.tmp
+
+# ============================================================================
+# Development Documentation (不上傳到 GitHub)
+# ============================================================================
+
+# 開發文檔目錄
+docs/
+
+# 開發歷程紀錄
+artifacts/
+chat-history/
+
+# Claude Code 設定
+.claude/
+
+# 其他開發相關檔案
+*.draft.md
+*.notes.md
+*.todo.md

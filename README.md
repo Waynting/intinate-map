@@ -1,542 +1,336 @@
-# 全台私密空間地圖 🏨🗺️
+# 雙北市私密空間地圖 🏨
 
-A full-stack web application for discovering private accommodation spaces across Taiwan. Built with Next.js 15, Express, SQLite, and Google Maps APIs.
+純展示型的互動式地圖應用，提供雙北市（台北市與新北市）超過 1,100 個飯店、汽車旅館與民宿的查詢服務。無需登入，完全開放使用。
 
-## 🎯 Features
+## 🎯 核心功能
 
-- **Interactive Map**: Browse accommodation spaces on an interactive Google Maps interface
-- **User Authentication**: Secure JWT-based authentication with bcrypt password hashing
-- **Place Management**: Full CRUD operations for accommodation places with privacy tags
-- **Geocoding Integration**: Automatic address-to-coordinates conversion using Google Maps Geocoding API
-- **Smart Search & Filters**: Search by city, type, ratings, and privacy features
-- **Reviews & Ratings**: Anonymous reviews with privacy-focused tags
-- **Government Data Integration**: Integrated with Taiwan's open data platform
+- **互動式地圖查看** - 使用 Leaflet + OpenStreetMap 免費地圖服務
+- **智能搜尋與篩選** - 依類型、城市、評分、價位快速定位
+- **Google 商家評分整合** - 顯示真實的 Google 評價與評分
+- **隱私特色標籤** - 標示自助入住、隔音良好等特色
+- **台大周邊專區** - 快速查看台大總區、台大醫院、台北車站周邊旅宿
 
-## 🏗️ Architecture
+## 🏗️ 技術架構
 
-### Tech Stack
+### 技術棧
 
-**Frontend:**
+**前端:**
 - Next.js 15 (App Router)
 - React 19
 - TypeScript
 - Tailwind CSS + shadcn/ui
-- Google Maps JavaScript API
-- Axios for API calls
-- Zod for validation
+- Leaflet + OpenStreetMap (免費地圖)
+- TanStack Query (資料快取)
+- Axios + Zod
 
-**Backend:**
+**後端:**
 - Node.js + Express
 - TypeScript
-- SQLite + Prisma ORM
-- JWT + bcrypt for auth
-- Google Maps Geocoding API
-- Zod for validation
+- Prisma ORM + SQLite/PostgreSQL
+- Zod 資料驗證
+- CORS 跨域支援
 
-### Project Structure
+### 專案結構
 
 ```
-Hw4/
+intinate-map/
 ├── backend/
 │   ├── src/
-│   │   ├── auth/          # Authentication routes & services
-│   │   ├── spots/         # Spots CRUD routes & services
-│   │   ├── maps/          # Google Maps integration
-│   │   ├── db/            # Prisma client & seed data
-│   │   ├── types.ts       # TypeScript types
-│   │   └── index.ts       # Express app entry
+│   │   ├── places/          # 場所查詢 API
+│   │   ├── types.ts         # TypeScript 類型定義
+│   │   └── index.ts         # Express 應用入口
 │   ├── prisma/
-│   │   └── schema.prisma  # Database schema
-│   ├── .env.example       # Environment template
+│   │   └── schema.prisma    # 資料庫 Schema
+│   ├── .env.example         # 環境變數範本
 │   └── package.json
 │
 └── frontend/
     ├── app/
-    │   ├── auth/          # Login & register pages
-    │   ├── spots/         # Spots listing, create, edit
-    │   ├── layout.tsx     # Root layout
-    │   └── page.tsx       # Home (redirects to spots)
+    │   ├── places/          # 地圖與場所頁面
+    │   ├── layout.tsx       # 根佈局
+    │   └── page.tsx         # 首頁
     ├── components/
-    │   ├── ui/            # shadcn/ui components
-    │   └── spots/         # Spot-specific components
+    │   ├── ui/              # shadcn/ui 元件
+    │   └── places/          # 場所相關元件
     ├── lib/
-    │   ├── api.ts         # API client & types
-    │   └── utils.ts       # Utilities
-    ├── .env.example       # Environment template
+    │   ├── api.ts           # API 客戶端
+    │   └── utils.ts         # 工具函數
+    ├── .env.example         # 環境變數範本
     └── package.json
 ```
 
-## 🚀 Getting Started
+## 🚀 快速開始
 
-### Prerequisites
+### 環境需求
 
-- Node.js 18+ and npm
-- Google Cloud Platform account
-- Google Maps API keys (both browser and server keys)
+- Node.js 18+ 與 npm
+- 無需 API Key（使用免費的 OpenStreetMap）
 
-### Google Maps API Setup
+### 後端設定
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the following APIs:
-   - **Maps JavaScript API** (for frontend map display)
-   - **Geocoding API** (for backend address conversion)
-4. Create two API keys:
-   - **Browser Key**: Restrict to your frontend domain (e.g., `http://localhost:3000`)
-   - **Server Key**: Restrict to your server IP (optional for local dev)
-
-### Backend Setup
-
-1. Navigate to backend directory:
+1. 進入後端目錄：
 ```bash
 cd backend
 ```
 
-2. Install dependencies:
+2. 安裝依賴：
 ```bash
 npm install
 ```
 
-3. Create `.env` file from template:
+3. 建立環境變數檔案：
 ```bash
 cp .env.example .env
 ```
 
-4. Configure `.env`:
+4. 設定 `.env`：
 ```env
 PORT=3000
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:3001
 DATABASE_URL="file:./dev.db"
-JWT_SECRET=your_secure_random_string_here
-JWT_EXPIRES_IN=7d
-GOOGLE_MAPS_SERVER_KEY=your_server_api_key_here
 ```
 
-5. Initialize database and run migrations:
+5. 初始化資料庫並執行遷移：
 ```bash
 npx prisma migrate dev --name init
 ```
 
-6. Seed database with Taipei night spots:
+6. （選用）匯入資料：
 ```bash
 npm run db:seed
 ```
 
-7. Start development server:
+7. 啟動開發伺服器：
 ```bash
 npm run dev
 ```
 
-Backend will run on `http://localhost:3000`
+後端將執行於 `http://localhost:3000`
 
-### Frontend Setup
+### 前端設定
 
-1. Navigate to frontend directory:
+1. 進入前端目錄：
 ```bash
 cd frontend
 ```
 
-2. Install dependencies:
+2. 安裝依賴：
 ```bash
 npm install
 ```
 
-3. Create `.env.local` file from template:
+3. 建立環境變數檔案：
 ```bash
 cp .env.example .env.local
 ```
 
-4. Configure `.env.local`:
+4. 設定 `.env.local`：
 ```env
-NEXT_PUBLIC_GOOGLE_MAPS_JS_KEY=your_browser_api_key_here
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
-5. Start development server:
+5. 啟動開發伺服器：
 ```bash
 npm run dev
 ```
 
-Frontend will run on `http://localhost:3000` (or next available port)
+前端將執行於 `http://localhost:3001`
 
-### Default Credentials
+## 📡 API 文件
 
-After seeding, you can login with:
-- **Email**: `demo@taipei-nights.com`
-- **Password**: `demo1234`
+### 場所端點（只讀）
 
-## 📡 API Documentation
+#### GET `/api/places`
+取得場所列表（支援篩選）
 
-### Authentication Endpoints
+**查詢參數：**
+- `type` (string): 場所類型 - hotel | motel | short_stay
+- `city` (string): 城市名稱（如：臺北市、新北市）
+- `q` (string): 搜尋關鍵字（名稱或地址）
+- `minRating` (number): 最低評分（0-5）
+- `maxPriceLevel` (number): 最高價位等級（0-4）
+- `lat`, `lng`, `radius` (number): 半徑搜尋（米）
+- `boundsNE_lat`, `boundsNE_lng`: 地圖視窗東北角座標
+- `boundsSW_lat`, `boundsSW_lng`: 地圖視窗西南角座標
+- `limit` (number): 回傳筆數上限（預設 2500）
+- `offset` (number): 分頁偏移量
 
-#### POST `/auth/register`
-Register a new user
-
-**Request:**
+**回應範例 (200):**
 ```json
 {
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**Response (201):**
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "createdAt": "2025-10-17T..."
-  }
-}
-```
-
-#### POST `/auth/login`
-Login and receive JWT token
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "message": "Login successful",
-  "token": "jwt_token_here",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com"
-  }
-}
-```
-
-### Spots Endpoints
-
-#### GET `/api/spots`
-List all public spots (supports filtering)
-
-**Query Parameters:**
-- `q` (string): Search query
-- `bestTime` (enum): sunset|blue_hour|night|late_night
-- `category` (enum): skyline|street|rooftop|reflection|landmark
-- `lat` (number): Latitude for radius search
-- `lng` (number): Longitude for radius search
-- `radius` (number): Search radius in meters
-- `limit` (number): Max results (default 50)
-- `offset` (number): Pagination offset
-
-**Response (200):**
-```json
-{
-  "spots": [
+  "places": [
     {
       "id": "uuid",
-      "title": "象山六巨石",
-      "description": "101 天際線、藍調、跨年煙火視角",
-      "address": "臺北市信義區...",
-      "latitude": 25.026,
-      "longitude": 121.5709,
-      "category": "skyline",
-      "bestTime": "blue_hour",
-      "lensHint": "24-70",
-      "accessNote": "階梯多，帶頭燈",
-      "isPublic": true,
-      "createdAt": "...",
-      "updatedAt": "...",
-      "user": {
-        "id": "uuid",
-        "email": "demo@taipei-nights.com"
-      }
+      "name": "台北喜來登大飯店",
+      "type": "hotel",
+      "address": "臺北市中正區忠孝東路一段12號",
+      "latitude": 25.0445,
+      "longitude": 121.5213,
+      "googlePlaceId": "ChIJ...",
+      "googleRating": 4.3,
+      "googleRatingsTotal": 2847,
+      "googlePriceLevel": 3,
+      "privacyTags": ["self_checkin", "soundproof"],
+      "source": "google_maps",
+      "createdAt": "2025-10-18T...",
+      "updatedAt": "2025-10-18T...",
+      "reviewCount": 0,
+      "averageRating": null
     }
   ],
-  "total": 20
+  "count": 1,
+  "limit": 2500,
+  "offset": 0
 }
 ```
 
-#### GET `/api/spots/:id`
-Get single spot details
+#### GET `/api/places/stats/cities`
+取得城市統計資料
 
-**Response (200):**
+**回應範例 (200):**
 ```json
 {
-  "spot": { /* spot object */ }
+  "cities": [
+    { "name": "臺北市", "count": 683 },
+    { "name": "新北市", "count": 456 }
+  ]
 }
 ```
 
-#### POST `/api/spots`
-Create new spot (requires authentication)
+#### GET `/api/places/ntu`
+取得台大周邊場所（台大總區、台大醫院、台北車站）
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+**查詢參數：** 同 `/api/places`
 
-**Request:**
+#### GET `/api/places/:id`
+取得單一場所詳情
+
+**回應範例 (200):**
 ```json
 {
-  "title": "My Spot",
-  "description": "Great view",
-  "address": "臺北市信義區...",  // OR provide lat/lng
-  "category": "skyline",
-  "bestTime": "night",
-  "lensHint": "24-70",
-  "accessNote": "Bring tripod"
+  "id": "uuid",
+  "name": "台北喜來登大飯店",
+  ...
 }
 ```
 
-**Response (201):**
-```json
-{
-  "message": "Spot created successfully",
-  "spot": { /* created spot */ }
-}
-```
+## 🎨 前端功能
 
-**Notes:**
-- If `address` provided without coordinates, backend geocodes it automatically
-- If coordinates provided without address, backend does reverse geocoding
+### 頁面
 
-#### PATCH `/api/spots/:id`
-Update spot (requires authentication, owner only)
+1. **首頁** (`/`)
+   - 專案簡介
+   - 快速連結：台大周邊地圖、雙北全區地圖
+   - 場所統計資訊
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+2. **地圖頁面** (`/places`)
+   - Leaflet 互動式地圖（使用 OpenStreetMap）
+   - 場所標記聚合（Clustering）
+   - 浮動搜尋列與篩選器
+   - 點擊標記顯示詳細資訊
+   - 台大周邊 / 雙北全區切換
 
-**Request:**
-```json
-{
-  "title": "Updated Title",
-  "bestTime": "blue_hour"
-  // Any field can be updated
-}
-```
+3. **場所詳細頁面** (`/places/:id`)
+   - 完整場所資訊
+   - Google 評分與評論數
+   - 導航連結（Google 地圖）
 
-**Response (200):**
-```json
-{
-  "message": "Spot updated successfully",
-  "spot": { /* updated spot */ }
-}
-```
+### 元件
 
-#### DELETE `/api/spots/:id`
-Delete spot (requires authentication, owner only)
+- **LeafletMap** - Leaflet 互動式地圖，支援標記聚合
+- **MapSearchBar** - 搜尋列與篩選按鈕
+- **PlaceDetailPanel** - 場所詳細資訊面板
+- **FilterDialog** - 進階篩選對話框
+- **shadcn/ui** - Button, Input, Card, Select, Badge, Dialog 等 UI 元件
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response (200):**
-```json
-{
-  "message": "Spot deleted successfully"
-}
-```
-
-## 🧪 Testing with cURL
-
-### 1. Register a new user
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test1234"}'
-```
-
-### 2. Login and get token
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test1234"}'
-```
-
-Save the token from response.
-
-### 3. Create spot with address (auto-geocoded)
-```bash
-TOKEN="your_token_here"
-
-curl -X POST http://localhost:3000/api/spots \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title":"台北101觀景台",
-    "address":"臺北市信義區信義路五段7號",
-    "bestTime":"blue_hour",
-    "category":"skyline"
-  }'
-```
-
-### 4. Create spot with coordinates (auto-reverse-geocoded)
-```bash
-curl -X POST http://localhost:3000/api/spots \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title":"象山登山口",
-    "latitude":25.0260,
-    "longitude":121.5709,
-    "bestTime":"night",
-    "category":"skyline"
-  }'
-```
-
-### 5. Search spots by radius
-```bash
-curl "http://localhost:3000/api/spots?lat=25.033&lng=121.565&radius=2000&bestTime=blue_hour"
-```
-
-### 6. Update spot
-```bash
-curl -X PATCH http://localhost:3000/api/spots/<spot_id> \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Updated Title","bestTime":"night"}'
-```
-
-### 7. Delete spot
-```bash
-curl -X DELETE http://localhost:3000/api/spots/<spot_id> \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-## 🎨 Frontend Features
-
-### Pages
-
-1. **Login/Register** (`/auth/login`, `/auth/register`)
-   - Clean card-based authentication UI
-   - Form validation and error handling
-   - Demo credentials displayed
-
-2. **Spots Listing** (`/spots`)
-   - Split view: Interactive map + scrollable spot cards
-   - Real-time marker updates
-   - Search and filter functionality
-   - Click markers to select spots
-   - Floating "Add" button
-
-3. **Create Spot** (`/spots/new`)
-   - Form with all spot fields
-   - Address OR coordinates input
-   - Category and time selectors
-   - Optional lens hints and access notes
-
-4. **Edit Spot** (`/spots/edit/:id`)
-   - Pre-populated form
-   - Same validation as create
-   - Owner-only access
-
-### Components
-
-- **GoogleMap**: Interactive map with custom markers
-- **SpotCard**: Displays spot info with edit/delete for owners
-- **shadcn/ui**: Button, Input, Card, Select, Badge, Toast, etc.
-
-## 🔒 Security
-
-- Passwords hashed with bcrypt (10 salt rounds)
-- JWT tokens with 7-day expiration
-- CORS configured for specific origins
-- Owner-only edit/delete enforcement
-- Input validation with Zod schemas
-- SQL injection prevention via Prisma
-
-## 📊 Database Schema
+## 📊 資料庫 Schema
 
 ```prisma
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  spots        Spot[]
-}
-
-model Spot {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(...)
-  title       String
-  description String?
-  address     String?
-  latitude    Float
-  longitude   Float
-  category    String   @default("skyline")
-  bestTime    String   @default("night")
-  lensHint    String?
-  accessNote  String?
-  isPublic    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Place {
+  id                  String    @id @default(uuid())
+  name                String
+  type                String    // hotel | motel | short_stay
+  address             String?
+  latitude            Float
+  longitude           Float
+  googlePlaceId       String?   @unique
+  googleRating        Float?
+  googleRatingsTotal  Int?
+  googlePriceLevel    Int?      // 0-4
+  privacyTags         String?   // JSON array
+  source              String    @default("user")
+  createdBy           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([latitude, longitude])
-  @@index([bestTime])
-  @@index([category])
+  @@index([type])
 }
 ```
 
-## 🛠️ Development Commands
+## 🛠️ 開發指令
 
-### Backend
+### 後端
 ```bash
-npm run dev          # Start dev server with watch mode
-npm run build        # Build TypeScript
-npm run start        # Run production build
-npm run db:push      # Push schema changes
-npm run db:migrate   # Create migration
-npm run db:seed      # Seed database
-npm run db:studio    # Open Prisma Studio
+npm run dev          # 啟動開發伺服器（含 watch 模式）
+npm run build        # 編譯 TypeScript
+npm run start        # 執行生產版本
+npm run db:push      # 推送 Schema 變更
+npm run db:migrate   # 建立遷移
+npm run db:seed      # 匯入種子資料
+npm run db:studio    # 開啟 Prisma Studio
 ```
 
-### Frontend
+### 前端
 ```bash
-npm run dev          # Start Next.js dev server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+npm run dev          # 啟動 Next.js 開發伺服器
+npm run build        # 建置生產版本
+npm run start        # 啟動生產伺服器
+npm run lint         # 執行 ESLint
 ```
 
-## 🐛 Troubleshooting
+## 🐛 疑難排解
 
-### Google Maps not loading
-- Check browser console for API key errors
-- Verify Maps JavaScript API is enabled
-- Check domain restrictions on API key
+### 地圖無法載入
+- 檢查瀏覽器主控台是否有錯誤訊息
+- 確認前端 API Base URL 設定正確
+- 確認後端伺服器正在執行
 
-### Geocoding fails
-- Verify Geocoding API is enabled
-- Check server API key in backend `.env`
-- Look for quota/billing issues in GCP console
+### API 呼叫失敗
+- 檢查後端 `.env` 中的 CORS_ORIGINS 是否包含前端網址
+- 確認資料庫已正確初始化
+- 查看後端主控台的錯誤訊息
 
-### Authentication issues
-- Clear localStorage and try again
-- Check JWT_SECRET is set in backend
-- Verify CORS_ORIGINS includes frontend URL
+### 資料庫錯誤
+- 刪除 `dev.db` 並重新執行遷移
+- 執行 `npx prisma generate` 重新產生 Prisma Client
+- 確認 `.env` 中的 DATABASE_URL 正確
 
-### Database errors
-- Delete `dev.db` and run migrations again
-- Run `npx prisma generate` to regenerate client
-- Check DATABASE_URL in `.env`
+## 🚀 部署
 
-## 📝 License
+### 推薦平台
+
+- **Vercel** - 前端部署（免費）
+- **Railway** / **Render** - 後端部署（免費方案）
+- **Zeabur** - 全端部署（支援台灣節點）
+
+### 環境變數設定
+
+**後端：**
+- `PORT` - 伺服器埠號
+- `CORS_ORIGINS` - 允許的前端網址
+- `DATABASE_URL` - 資料庫連線字串
+
+**前端：**
+- `NEXT_PUBLIC_API_BASE_URL` - 後端 API 網址
+
+## 📝 授權
 
 MIT
 
-## 👥 Contributors
+## 🙏 致謝
 
-Built as HW4 for Web Programming course
-
-## 🙏 Acknowledgments
-
-- Taipei night photography community
-- Google Maps Platform
-- Next.js and Prisma teams
-- shadcn/ui component library
+- OpenStreetMap 社群提供免費地圖圖資
+- Google Maps Platform 提供商家評分資料
+- Next.js、Prisma、Leaflet 等開源專案
+- shadcn/ui 元件庫

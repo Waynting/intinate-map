@@ -13,42 +13,17 @@ import {
   Star,
   DollarSign,
   ExternalLink,
-  Heart,
-  MessageSquare,
-  Flag,
-  Edit,
-  Trash2,
-  Phone,
-  Globe,
   Navigation,
 } from "lucide-react";
 
 interface PlaceDetailPanelProps {
   place: Place | null;
   onClose: () => void;
-  onViewDetails?: (place: Place) => void;
-  onAddReview?: (place: Place) => void;
-  onReport?: (place: Place) => void;
-  onEdit?: (place: Place) => void;
-  onDelete?: (place: Place) => void;
-  onToggleFavorite?: (place: Place) => void;
-  isFavorite?: boolean;
-  currentUserId?: string;
-  isAdmin?: boolean;
 }
 
 export function PlaceDetailPanel({
   place,
   onClose,
-  onViewDetails,
-  onAddReview,
-  onReport,
-  onEdit,
-  onDelete,
-  onToggleFavorite,
-  isFavorite,
-  currentUserId,
-  isAdmin,
 }: PlaceDetailPanelProps) {
   const router = useRouter();
 
@@ -87,6 +62,11 @@ export function PlaceDetailPanel({
 
   const handleDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
+    window.open(url, "_blank");
+  };
+
+  const handleViewOnGoogleMaps = () => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`;
     window.open(url, "_blank");
   };
 
@@ -169,104 +149,25 @@ export function PlaceDetailPanel({
           </div>
         )}
 
-        {/* Reviews */}
-        {place.reviewCount !== undefined && place.reviewCount > 0 && (
-          <div>
-            <h3 className="text-sm font-semibold mb-2">用戶評論</h3>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {place.reviewCount} 則評論
-              </span>
-              {place.averageRating && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">{place.averageRating.toFixed(1)}</span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        <Separator />
-
         {/* Action Buttons */}
         <div className="space-y-2">
           <Button
             className="w-full gap-2"
-            onClick={() => onViewDetails?.(place)}
+            onClick={handleViewOnGoogleMaps}
           >
             <ExternalLink className="w-4 h-4" />
-            查看詳細資訊
+            在 Google 地圖中查看
           </Button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAddReview?.(place)}
-              className="gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              撰寫評論
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onToggleFavorite?.(place)}
-              className="gap-2"
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-              {isFavorite ? "已收藏" : "收藏"}
-            </Button>
-          </div>
 
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onReport?.(place)}
-            className="w-full gap-2 text-muted-foreground"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleDirections}
           >
-            <Flag className="w-4 h-4" />
-            回報問題
+            <Navigation className="w-4 h-4" />
+            規劃路線
           </Button>
         </div>
-
-        {/* Admin/Owner Actions */}
-        {(isAdmin || place.createdBy === currentUserId) && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground mb-2">管理操作</p>
-              <div className="grid grid-cols-2 gap-2">
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(place)}
-                    className="gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    編輯
-                  </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(place)}
-                    className="gap-2 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    刪除
-                  </Button>
-                )}
-              </div>
-            </div>
-          </>
-        )}
 
         {/* Google Place ID (for debugging) */}
         {place.googlePlaceId && (
